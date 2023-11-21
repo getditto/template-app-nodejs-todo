@@ -11,7 +11,11 @@ let tasks: Document[] = []
 async function main () {
   await init()
 
-  ditto = new Ditto({ type: 'onlinePlayground', appID: 'YOUR_APP_ID', token: 'YOUR_TOKEN' })
+  ditto = new Ditto({
+    type: 'onlinePlayground',
+    appID: 'YOUR_APP_ID',
+    token: 'YOUR_TOKEN'
+  })
   ditto.startSync()
 
   subscription = ditto.store.collection("tasks").find("isDeleted == false").subscribe()

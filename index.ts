@@ -1,5 +1,5 @@
 
-import { init, Ditto, Document } from '@dittolive/ditto'
+import { init, Ditto, Document } from 'dist'
 import * as readline from 'readline/promises'
 import { stdin as input, stdout as output } from 'node:process';
 
@@ -13,8 +13,8 @@ async function main () {
 
   ditto = new Ditto({
     type: 'onlinePlayground',
-    appID: 'YOUR_APP_ID',
-    token: 'YOUR_TOKEN'
+    appID: 'f0862187-a16f-42c3-848e-48e1bb2d216a',
+    token: '334e0eab-16b0-4f59-af80-4ff79ffb1aa8'
   })
   ditto.startSync()
 
@@ -46,11 +46,15 @@ async function main () {
       let answer = await rl.question('Your command:')
       if (answer.startsWith("--insert")) {
         let body = answer.replace("--insert ", "")
-        ditto.store.collection("tasks").upsert({
+        const newTask = {
           body,
           isDeleted: false,
           isCompleted: false
-        })
+        }
+        await ditto.store.execute(`
+          INSERT INTO tasks
+          DOCUMENTS (:newTask)`,
+          { newTask })
       }
       if (answer.startsWith("--toggle")) {
         let id = answer.replace("--toggle ", "")
@@ -73,10 +77,16 @@ async function main () {
       if (answer.startsWith("--exit")) {
         ditto.stopSync()
         process.exit()
-        
       }
   }
-
 }
 
 main()
+
+/*
+ditto = new Ditto({
+  type: 'onlinePlayground',
+  appID: 'YOUR_APP_ID',
+  token: 'YOUR_TOKEN'
+})
+*/

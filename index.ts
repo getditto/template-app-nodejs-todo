@@ -1,4 +1,3 @@
-
 import { init, Ditto, Document } from 'dist'
 import * as readline from 'readline/promises'
 import { stdin as input, stdout as output } from 'node:process';
@@ -7,6 +6,8 @@ let ditto
 let subscription
 let liveQuery
 let tasks: Document[] = []
+let utasks = {}
+let queryResult
 
 async function main () {
   await init()
@@ -22,6 +23,19 @@ async function main () {
   liveQuery = ditto.store.collection("tasks").find("isDeleted == false").observeLocal((docs, event) => {
     tasks = docs
   })
+  ditto.store.registerObserver(`
+    SELECT *
+    FROM tasks`,
+    (result) => { 
+      console.log(
+        result.items
+          .map((doc) => {
+            const val = JSON.stringify(doc.value)
+            return `${val}`
+          })
+      )
+    }
+  )
   let isAskedToExit = false
   
   console.log("************* Commands *************");
@@ -67,12 +81,29 @@ async function main () {
       if (answer.startsWith("--list")) {
         console.log(tasks.map((task) => task.value))
       }
+      if (answer.startsWith("--ulist")) {
+        console.log('utasks: ', utasks)
+      }
+      if (answer.startsWith("--all")) {
+        queryResult = await ditto.store.execute(`
+          SELECT * FROM tasks`
+        )
+        console.log(
+          queryResult.items
+            .map((doc) => {
+              const id = doc.value._id
+              return `${id}`
+            })
+        )
+      }
       if (answer.startsWith("--delete")) {
         let id = answer.replace("--delete ", "")
-        ditto.store.collection("tasks")
-        .findByID(id).update((doc) => {
-          doc.at("isDeleted").set(true)
-        })
+        await ditto.store.execute(`
+          UPDATE tasks
+          SET isDeleted = true
+          WHERE _id = :id`,
+          { id }
+        )
       }
       if (answer.startsWith("--exit")) {
         ditto.stopSync()

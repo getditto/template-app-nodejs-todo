@@ -6,7 +6,6 @@ let ditto
 let subscription
 let liveQuery
 let tasks: Document[] = []
-let utasks = {}
 let queryResult
 
 async function main () {
@@ -23,17 +22,20 @@ async function main () {
   liveQuery = ditto.store.collection("tasks").find("isDeleted == false").observeLocal((docs, event) => {
     tasks = docs
   })
+  ditto.sync.registerSubscription(`
+    SELECT *
+    FROM tasks
+    WHERE isDeleted = false`
+  )
   ditto.store.registerObserver(`
     SELECT *
-    FROM tasks`,
+    FROM tasks
+    WHERE isDeleted = false`,
     (result) => { 
-      console.log(
-        result.items
-          .map((doc) => {
-            const val = JSON.stringify(doc.value)
-            return `${val}`
-          })
-      )
+      result.items
+        .map((doc) => {
+          return doc.value
+        })
     }
   )
   let isAskedToExit = false
@@ -81,18 +83,15 @@ async function main () {
       if (answer.startsWith("--list")) {
         console.log(tasks.map((task) => task.value))
       }
-      if (answer.startsWith("--ulist")) {
-        console.log('utasks: ', utasks)
-      }
       if (answer.startsWith("--all")) {
         queryResult = await ditto.store.execute(`
-          SELECT * FROM tasks`
+          SELECT * FROM tasks
+          WHERE isDeleted = false`
         )
         console.log(
           queryResult.items
-            .map((doc) => {
-              const id = doc.value._id
-              return `${id}`
+            .map((item) => {
+              return item.value
             })
         )
       }

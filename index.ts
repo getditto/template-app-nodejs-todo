@@ -25,7 +25,7 @@ async function main () {
     SELECT *
     FROM tasks
     WHERE isDeleted = false`,
-    (result) => { 
+    (result) => {
       result.items
         .map((doc) => {
           return doc.value

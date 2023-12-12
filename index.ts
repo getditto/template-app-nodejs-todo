@@ -11,8 +11,8 @@ async function main () {
 
   ditto = new Ditto({
     type: 'onlinePlayground',
-    appID: 'f0862187-a16f-42c3-848e-48e1bb2d216a',
-    token: '334e0eab-16b0-4f59-af80-4ff79ffb1aa8'
+    appID: 'YOUR_APP_ID',
+    token: 'YOUR_TOKEN'
   })
   ditto.startSync()
 
@@ -84,16 +84,6 @@ async function main () {
           { id, newValue }
         )
       }
-      /*
-      if (answer.startsWith("--toggle")) {
-        let id = answer.replace("--toggle ", "")
-        ditto.store.collection("tasks")
-        .findByID(id).update((doc) => {
-          let isCompleted = doc.value.isCompleted
-          doc.at("isCompleted").set(!isCompleted)
-        })
-      }
-      */
       if (answer.startsWith("--list")) {
         queryResult = await ditto.store.execute(`
           SELECT * FROM tasks
@@ -123,11 +113,3 @@ async function main () {
 }
 
 main()
-
-/*
-ditto = new Ditto({
-  type: 'onlinePlayground',
-  appID: 'YOUR_APP_ID',
-  token: 'YOUR_TOKEN'
-})
-*/

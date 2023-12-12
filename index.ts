@@ -1,10 +1,8 @@
-import { init, Ditto, Document } from 'dist'
+import { init, Ditto, Document } from '@dittolive/ditto'
 import * as readline from 'readline/promises'
 import { stdin as input, stdout as output } from 'node:process';
 
 let ditto
-let subscription
-let liveQuery
 let tasks: Document[] = []
 let queryResult
 
@@ -18,10 +16,6 @@ async function main () {
   })
   ditto.startSync()
 
-  subscription = ditto.store.collection("tasks").find("isDeleted == false").subscribe()
-  liveQuery = ditto.store.collection("tasks").find("isDeleted == false").observeLocal((docs, event) => {
-    tasks = docs
-  })
   ditto.sync.registerSubscription(`
     SELECT *
     FROM tasks
@@ -74,16 +68,33 @@ async function main () {
       }
       if (answer.startsWith("--toggle")) {
         let id = answer.replace("--toggle ", "")
+        queryResult = await ditto.store.execute(`
+          SELECT * FROM tasks
+          WHERE _id = :id`,
+          { id }
+        )
+        let newValue = !queryResult.items
+        .map((item) => {
+          return item.value.isCompleted
+        })[0]
+        await ditto.store.execute(`
+          UPDATE tasks
+          SET isCompleted = :newValue
+          WHERE _id = :id`,
+          { id, newValue }
+        )
+      }
+      /*
+      if (answer.startsWith("--toggle")) {
+        let id = answer.replace("--toggle ", "")
         ditto.store.collection("tasks")
         .findByID(id).update((doc) => {
           let isCompleted = doc.value.isCompleted
           doc.at("isCompleted").set(!isCompleted)
         })
       }
+      */
       if (answer.startsWith("--list")) {
-        console.log(tasks.map((task) => task.value))
-      }
-      if (answer.startsWith("--all")) {
         queryResult = await ditto.store.execute(`
           SELECT * FROM tasks
           WHERE isDeleted = false`

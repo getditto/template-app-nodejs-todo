@@ -11,8 +11,8 @@ async function main () {
 
   ditto = new Ditto({
     type: 'onlinePlayground',
-    appID: 'YOUR_APP_ID',
-    token: 'YOUR_TOKEN'
+    appID: 'REPLACE_WITH_YOUR_APP_ID',
+    token: 'REPLACE_WITH_YOUR_TOKEN'
   })
   ditto.startSync()
 

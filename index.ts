@@ -24,11 +24,11 @@ async function main () {
   ditto.store.registerObserver(`
     SELECT *
     FROM tasks
-    WHERE isDeleted = false`,
+    WHERE isDeleted = false AND isCompleted = false`,
     (result) => {
-      result.items
+       result.items
         .map((doc) => {
-          return doc.value
+          tasks.push(doc.value)
         })
     }
   )
@@ -85,16 +85,7 @@ async function main () {
         )
       }
       if (answer.startsWith("--list")) {
-        queryResult = await ditto.store.execute(`
-          SELECT * FROM tasks
-          WHERE isDeleted = false`
-        )
-        console.log(
-          queryResult.items
-            .map((item) => {
-              return item.value
-            })
-        )
+        console.log(tasks)
       }
       if (answer.startsWith("--delete")) {
         let id = answer.replace("--delete ", "")

@@ -26,9 +26,9 @@ async function main () {
     FROM tasks
     WHERE isDeleted = false AND isCompleted = false`,
     (result) => {
-       result.items
+       tasks = result.items
         .map((doc) => {
-          tasks.push(doc.value)
+          return doc.value
         })
     }
   )

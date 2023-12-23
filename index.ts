@@ -1,27 +1,37 @@
-
 import { init, Ditto, Document } from '@dittolive/ditto'
 import * as readline from 'readline/promises'
 import { stdin as input, stdout as output } from 'node:process';
 
 let ditto
-let subscription
-let liveQuery
 let tasks: Document[] = []
+let queryResult
 
 async function main () {
   await init()
 
   ditto = new Ditto({
     type: 'onlinePlayground',
-    appID: 'YOUR_APP_ID',
-    token: 'YOUR_TOKEN'
+    appID: 'REPLACE_WITH_YOUR_APP_ID',
+    token: 'REPLACE_WITH_YOUR_TOKEN'
   })
   ditto.startSync()
 
-  subscription = ditto.store.collection("tasks").find("isDeleted == false").subscribe()
-  liveQuery = ditto.store.collection("tasks").find("isDeleted == false").observeLocal((docs, event) => {
-    tasks = docs
-  })
+  ditto.sync.registerSubscription(`
+    SELECT *
+    FROM tasks
+    WHERE isDeleted = false`
+  )
+  ditto.store.registerObserver(`
+    SELECT *
+    FROM tasks
+    WHERE isDeleted = false AND isCompleted = false`,
+    (result) => {
+       tasks = result.items
+        .map((doc) => {
+          return doc.value
+        })
+    }
+  )
   let isAskedToExit = false
   
   console.log("************* Commands *************");
@@ -46,37 +56,51 @@ async function main () {
       let answer = await rl.question('Your command:')
       if (answer.startsWith("--insert")) {
         let body = answer.replace("--insert ", "")
-        ditto.store.collection("tasks").upsert({
+        const newTask = {
           body,
           isDeleted: false,
           isCompleted: false
-        })
+        }
+        await ditto.store.execute(`
+          INSERT INTO tasks
+          DOCUMENTS (:newTask)`,
+          { newTask })
       }
       if (answer.startsWith("--toggle")) {
         let id = answer.replace("--toggle ", "")
-        ditto.store.collection("tasks")
-        .findByID(id).update((doc) => {
-          let isCompleted = doc.value.isCompleted
-          doc.at("isCompleted").set(!isCompleted)
-        })
+        queryResult = await ditto.store.execute(`
+          SELECT * FROM tasks
+          WHERE _id = :id`,
+          { id }
+        )
+        let newValue = !queryResult.items
+        .map((item) => {
+          return item.value.isCompleted
+        })[0]
+        await ditto.store.execute(`
+          UPDATE tasks
+          SET isCompleted = :newValue
+          WHERE _id = :id`,
+          { id, newValue }
+        )
       }
       if (answer.startsWith("--list")) {
-        console.log(tasks.map((task) => task.value))
+        console.log(tasks)
       }
       if (answer.startsWith("--delete")) {
         let id = answer.replace("--delete ", "")
-        ditto.store.collection("tasks")
-        .findByID(id).update((doc) => {
-          doc.at("isDeleted").set(true)
-        })
+        await ditto.store.execute(`
+          UPDATE tasks
+          SET isDeleted = true
+          WHERE _id = :id`,
+          { id }
+        )
       }
       if (answer.startsWith("--exit")) {
         ditto.stopSync()
         process.exit()
-        
       }
   }
-
 }
 
 main()

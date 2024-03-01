@@ -13,8 +13,8 @@ async function main() {
 
   ditto = new Ditto({
     type: "onlinePlayground",
-    appID: "Your_App_ID",
-    token: "Your_App_Token",
+    appID: "REPLACE_WITH_YOUR_APP_ID",
+    token: "REPLACE_WITH_YOUR_TOKEN",
   });
   ditto.startSync();
 
@@ -91,38 +91,20 @@ async function main() {
       const myAttachment = await ditto.store.newAttachment(path, metadata);
       console.log(myAttachment);
 
-      if (path.includes("123")) {
-        const newDQLAttachment = {
-          path,
-          _id: "123",
-          isDeleted: false,
-          isCompleted: false,
-          my_attachment: myAttachment,
-        };
+      const newDQLAttachment = {
+        path,
+        isDeleted: false,
+        isCompleted: false,
+        my_attachment: myAttachment,
+      };
 
-        // Insert the document into the collection, marking `my_attachment` as an
-        // attachment field.
-        await ditto.store.execute(
-          `INSERT INTO COLLECTION attachments (my_attachment ATTACHMENT)
+      // Insert the document into the collection, marking `my_attachment` as an
+      // attachment field.
+      await ditto.store.execute(
+        `INSERT INTO COLLECTION attachments (my_attachment ATTACHMENT)
              DOCUMENTS (:newDQLAttachment)`,
-          { newDQLAttachment },
-        );
-      } else {
-        const newDQLAttachment = {
-          path,
-          isDeleted: false,
-          isCompleted: false,
-          my_attachment: myAttachment,
-        };
-
-        // Insert the document into the collection, marking `my_attachment` as an
-        // attachment field.
-        await ditto.store.execute(
-          `INSERT INTO COLLECTION attachments (my_attachment ATTACHMENT)
-             DOCUMENTS (:newDQLAttachment)`,
-          { newDQLAttachment },
-        );
-      }
+        { newDQLAttachment },
+      );
     }
 
     if (answer.startsWith("--toggle")) {
@@ -145,15 +127,14 @@ async function main() {
     }
 
     if (answer.startsWith("--attachments")) {
-      //console.log(attachments);
-
       // Fetch the attachment token from a document in the store
-      // the '123' syntax is very important single quote
+      // is you want to search by ID: "WHERE _id = '123'" syntax is very important single quote only.
       const result = await ditto.store.execute(
         `
            SELECT *
-           FROM COLLECTION attachments (my_attachment ATTACHMENT) WHERE _id = '123'`,
+           FROM COLLECTION attachments (my_attachment ATTACHMENT)`,
       );
+      console.log("Result from execute:");
       console.log(result);
 
       const token = result.items[0].value.my_attachment;
@@ -164,12 +145,13 @@ async function main() {
       console.log(attachmentData);
 
       // Get attchment from the observer.
-
+      console.log("Result from observer:");
+      console.log(attachments);
       const token_Array = attachments[0].value.my_attachment;
       const attachment_Array = await ditto.store.fetchAttachment(token_Array);
       const attachmentDataFromArray = await attachment_Array.data();
 
-      console.log("Second attachments data:");
+      console.log("First attachments data from observer:");
       console.log(attachmentDataFromArray);
     }
 

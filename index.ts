@@ -1,8 +1,14 @@
-import { init, Ditto, Document, QueryResultItem } from "@dittolive/ditto";
+import {
+  init,
+  Ditto,
+  Document,
+  QueryResultItem,
+  QueryResult,
+} from "@dittolive/ditto";
 import * as readline from "readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 
-let ditto;
+let ditto: Ditto;
 let tasks: Document[] = [];
 let queryResult;
 
@@ -74,11 +80,15 @@ async function main() {
   console.log('   Example: "--delete 1234abc"');
   console.log("--list");
   console.log("   List the current tasks");
-  console.log("--add path_to_attachment");
-  console.log("   adds an attachment from the path provided.");
-  console.log('   Example: "--add ../files/image.png"');
+  console.log("--add name_of_attachment");
+  console.log("   adds an attachment from ./files dir with the provided name.");
+  console.log(
+    '   Example: "--add image.png" will get file from: "./files/image.png"',
+  );
   console.log("--attachments");
-  console.log("   List the current attachments");
+  console.log(
+    "   List the current attachments and copy them over to the ./fileOut directory.",
+  );
   console.log("--exit");
   console.log("   Exits the program");
   console.log("************* Commands *************");
@@ -104,15 +114,18 @@ async function main() {
     }
 
     if (answer.startsWith("--add")) {
-      let path = answer.replace("--add ", "");
-      const metadata = { name: "image.png" };
+      let name = answer.replace("--add ", "");
+      const metadata = { name: name };
 
       // Copy the file into Ditto's store and create an attachment object.
-      const myAttachment = await ditto.store.newAttachment(path, metadata);
+      const myAttachment = await ditto.store.newAttachment(
+        "./files/" + name,
+        metadata,
+      );
       console.log(myAttachment);
 
       const newDQLAttachment = {
-        path,
+        name,
         isDeleted: false,
         isCompleted: false,
         my_attachment: myAttachment,
@@ -176,29 +189,26 @@ async function main() {
       console.log(attachmentData);
 
       // Get attchment from the observer as well.
-      console.log("Result from observer:");
-      console.log(attachments);
-      const token_Observer = attachments[0].value.my_attachment;
-      const attachment_Observer = await ditto.store.fetchAttachment(
-        token_Observer,
-        async (attachmentFetchEvent) => {
-          switch (attachmentFetchEvent.type) {
-            case "Completed":
-              console.log("Attachment fetch completed!");
-              break;
-            case "Deleted":
-              console.log("Attachment fetch deleted.");
-              break;
-            case "Progress":
-              console.log("Attachment fetch in progress!");
-              break;
-          }
-        },
-      );
-      const attachmentData_Observer = await attachment_Observer.data();
+      attachments.forEach((element) => {
+        const attachmentToken = element.value.my_attachment;
 
-      console.log("First attachments data from observer:");
-      console.log(attachmentData_Observer);
+        ditto.store.fetchAttachment(
+          attachmentToken,
+          async (attachmentFetchEvent) => {
+            switch (attachmentFetchEvent.type) {
+              case "Completed":
+                console.log("Attachment fetch completed in the handler!");
+                const fetchedAttachment = attachmentFetchEvent.attachment;
+                const name = fetchedAttachment.metadata["name"];
+                fetchedAttachment.copyToPath("./filesOut/" + name);
+                break;
+              default:
+                console.log("Unable to fetch attachment locally");
+                break;
+            }
+          },
+        );
+      });
     }
 
     if (answer.startsWith("--delete")) {

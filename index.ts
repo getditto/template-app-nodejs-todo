@@ -179,8 +179,22 @@ async function main() {
       console.log("Result from observer:");
       console.log(attachments);
       const token_Observer = attachments[0].value.my_attachment;
-      const attachment_Observer =
-        await ditto.store.fetchAttachment(token_Observer);
+      const attachment_Observer = await ditto.store.fetchAttachment(
+        token_Observer,
+        async (attachmentFetchEvent) => {
+          switch (attachmentFetchEvent.type) {
+            case "Completed":
+              console.log("Attachment fetch completed!");
+              break;
+            case "Deleted":
+              console.log("Attachment fetch deleted.");
+              break;
+            case "Progress":
+              console.log("Attachment fetch in progress!");
+              break;
+          }
+        },
+      );
       const attachmentData_Observer = await attachment_Observer.data();
 
       console.log("First attachments data from observer:");

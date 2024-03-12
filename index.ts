@@ -251,22 +251,18 @@ async function main() {
         try {
         const attachmentToken = element.value.my_attachment;
 
-        ditto.store.fetchAttachment(
-          attachmentToken,
-          async (attachmentFetchEvent) => {
-            switch (attachmentFetchEvent.type) {
-              case "Completed":
-                console.log("Attachment fetch completed in the handler!");
-                const fetchedAttachment = attachmentFetchEvent.attachment;
-                const name = fetchedAttachment.metadata["name"];
-                fetchedAttachment.copyToPath("./filesOut/" + name);
-                break;
-              default:
-                console.log("Unable to fetch attachment locally");
-                break;
-            }
-          },
-        );
+        ditto.store.fetchAttachment(attachmentToken, async (attachmentFetchEvent) => {
+          switch (attachmentFetchEvent.type) {
+            case "Completed":
+              const fetchedAttachment = attachmentFetchEvent.attachment;
+              const name = fetchedAttachment.metadata["name"];
+              fetchedAttachment.copyToPath("./filesOut/" + name);
+              break;
+            default:
+              console.log("Unable to fetch attachment locally");
+              break;
+          }
+        });
         } catch(e) {
           console.log("Error when trying to copy all attachments.")
           console.log(e);

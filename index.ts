@@ -246,6 +246,7 @@ async function main() {
     if (answer.startsWith("--attachments")) {
       // Get attchment from the observer and copy all files to the filesOut directory.
       attachments.forEach((element) => {
+        try {
         const attachmentToken = element.value.my_attachment;
 
         ditto.store.fetchAttachment(
@@ -264,6 +265,10 @@ async function main() {
             }
           },
         );
+        } catch(e) {
+          console.log("Error when trying to copy all attachments.")
+          console.log(e);
+        }
       });
     }
 

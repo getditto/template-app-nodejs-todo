@@ -9,11 +9,9 @@ import * as readline from "readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 
 let ditto: Ditto;
+let taskQueryResult;
+let attachmentQueryResult;
 let tasks: Document[] = [];
-let queryResult;
-
-// Attachments dont to up as part of a Document.
-// Using QueryResultItem item instead.
 let attachments: QueryResultItem[] = [];
 
 async function main() {
@@ -69,26 +67,34 @@ async function main() {
   let isAskedToExit = false;
 
   console.log("************* Commands *************");
-  console.log("--insert my new task");
-  console.log("   Inserts a task");
-  console.log('   Example: "--insert Get Milk"');
-  console.log("--toggle myTaskTd");
+  console.log("'--insert-task myNewTask'");
+  console.log("'--insert-attachment myFileName'");
+  console.log("   Inserts a task/attachment");
+  console.log("   Inserts an attachment from ./files with the provided name.");
+  console.log('   Example: "--insert-task Get Milk"');
+  console.log('   Example: "--insert-attachment i.png" adds "./files/i.png"');
+  console.log("");
+
+  console.log("'--toggle-task myTaskTd'");
+  console.log("'--toggle-attachment myAttachmentId'");
   console.log("   Toggles the isComplete property to the opposite value");
-  console.log('   Example: "--toggle 1234abc"');
-  console.log("--delete myTaskTd");
-  console.log("   Deletes a task");
-  console.log('   Example: "--delete 1234abc"');
+  console.log('   Example: "--toggle-task 1234abc"');
+  console.log("");
+
+  console.log("'--delete-task myTaskTd'");
+  console.log("'--delete-attachment myAttachmentId'");
+  console.log("   Deletes a task or attachment");
+  console.log('   Example: "--delete-task 1234abc"');
+  console.log("");
+
   console.log("--list");
-  console.log("   List the current tasks");
-  console.log("--add name_of_attachment");
-  console.log("   adds an attachment from ./files dir with the provided name.");
-  console.log(
-    '   Example: "--add image.png" will get file from: "./files/image.png"',
-  );
+  console.log("   List the current tasks and attachments");
+  console.log("");
+
   console.log("--attachments");
-  console.log(
-    "   List the current attachments and copy them over to the ./fileOut directory.",
-  );
+  console.log("   Copy the attachments over to the ./fileOut directory.");
+  console.log("");
+
   console.log("--exit");
   console.log("   Exits the program");
   console.log("************* Commands *************");
@@ -98,8 +104,10 @@ async function main() {
   while (!isAskedToExit) {
     let answer = await rl.question("Your command:");
 
-    if (answer.startsWith("--insert")) {
-      let body = answer.replace("--insert ", "");
+    // --------------------- Insert section ---------------------
+
+    if (answer.startsWith("--insert-task")) {
+      let body = answer.replace("--insert-task ", "");
       const newTask = { body, isDeleted: false, isCompleted: false };
 
       await ditto.store.execute(
@@ -107,14 +115,12 @@ async function main() {
         INSERT INTO tasks
         DOCUMENTS (:newTask)
         `,
-        {
-          newTask,
-        },
+        { newTask },
       );
     }
 
-    if (answer.startsWith("--add")) {
-      let name = answer.replace("--add ", "");
+    if (answer.startsWith("--insert-attachment")) {
+      let name = answer.replace("--insert-attachment ", "");
       const metadata = { name: name };
 
       // Copy the file into Ditto's store and create an attachment object.
@@ -142,9 +148,11 @@ async function main() {
       );
     }
 
-    if (answer.startsWith("--toggle")) {
-      let id = answer.replace("--toggle ", "");
-      queryResult = await ditto.store.execute(
+    // --------------------- Toggle section ---------------------
+
+    if (answer.startsWith("--toggle-task")) {
+      let id = answer.replace("--toggle-task ", "");
+      taskQueryResult = await ditto.store.execute(
         `
         SELECT *
         FROM tasks
@@ -152,7 +160,7 @@ async function main() {
         `,
         { id },
       );
-      let newValue = !queryResult.items.map((item) => {
+      let newValue = !taskQueryResult.items.map((item) => {
         return item.value.isCompleted;
       })[0];
       await ditto.store.execute(
@@ -165,30 +173,68 @@ async function main() {
       );
     }
 
-    if (answer.startsWith("--list")) {
-      console.log(tasks);
-    }
-
-    if (answer.startsWith("--attachments")) {
-      // Fetch the attachment token from a document in the store
-      // is you want to search by ID: "WHERE _id = '123'" syntax is very important single quote only.
-      const result = await ditto.store.execute(
+    if (answer.startsWith("--toggle-attachment")) {
+      let id = answer.replace("--toggle-attachment ", "");
+      attachmentQueryResult = await ditto.store.execute(
         `
         SELECT *
         FROM COLLECTION attachments (my_attachment ATTACHMENT)
+        WHERE _id = :id
         `,
+        { id },
       );
-      console.log("Result from execute:");
-      console.log(result);
+      let newValue = !attachmentQueryResult.items.map((item) => {
+        return item.value.isCompleted;
+      })[0];
+      await ditto.store.execute(
+        `
+        UPDATE COLLECTION attachments (my_attachment ATTACHMENT)
+        SET isCompleted = :newValue
+        WHERE _id = :id
+        `,
+        { id, newValue },
+      );
+    }
 
-      const token = result.items[0].value.my_attachment;
-      const attachment = await ditto.store.fetchAttachment(token);
-      const attachmentData = await attachment.data();
+    // --------------------- Delete section ---------------------
 
-      console.log("First attachments data:");
-      console.log(attachmentData);
+    if (answer.startsWith("--delete-task")) {
+      let id = answer.replace("--delete-task ", "");
+      await ditto.store.execute(
+        `
+        UPDATE tasks
+        SET isDeleted = true
+        WHERE _id = :id
+        `,
+        { id },
+      );
+    }
 
-      // Get attchment from the observer as well.
+    if (answer.startsWith("--delete-attachment")) {
+      let id = answer.replace("--delete-attachmen ", "");
+      await ditto.store.execute(
+        `
+        UPDATE COLLECTION attachments (my_attachment ATTACHMENT)
+        SET isDeleted = true
+        WHERE _id = :id
+        `,
+        { id },
+      );
+    }
+
+    // --------------------- List section ---------------------
+
+    if (answer.startsWith("--list")) {
+      console.log("Tasks:");
+      console.log(tasks);
+      console.log("Attachments:");
+      console.log(attachments);
+    }
+
+    // --------------------- Attachments section ---------------------
+
+    if (answer.startsWith("--attachments")) {
+      // Get attchment from the observer and copy all files to the filesOut directory.
       attachments.forEach((element) => {
         const attachmentToken = element.value.my_attachment;
 
@@ -211,20 +257,10 @@ async function main() {
       });
     }
 
-    if (answer.startsWith("--delete")) {
-      let id = answer.replace("--delete ", "");
-      await ditto.store.execute(
-        `
-        UPDATE tasks
-        SET isDeleted = true
-        WHERE _id = :id
-        `,
-        { id },
-      );
-    }
+    // --------------------- Exit section ---------------------
 
     if (answer.startsWith("--exit")) {
-      ditto.stopSync();
+      await ditto.close;
       process.exit();
     }
   }

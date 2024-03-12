@@ -247,7 +247,7 @@ async function main() {
     // --------------------- Attachments section ---------------------
 
     if (answer.startsWith("--attachments")) {
-      // Get attchment from the observer and copy all files to the filesOut directory.
+      // Get attachment from the observer and copy all files to the filesOut directory.
       attachments.forEach((element) => {
         try {
         const attachmentToken = element.value.my_attachment;

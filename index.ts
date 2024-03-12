@@ -14,6 +14,44 @@ let attachmentQueryResult;
 let tasks: Document[] = [];
 let attachments: QueryResultItem[] = [];
 
+function help() {
+  console.log("************* Commands *************");
+  console.log("'--insert-task myNewTask'");
+  console.log("'--insert-attachment myFileName'");
+  console.log("   Inserts a task/attachment");
+  console.log("   Inserts an attachment from ./files with the provided name.");
+  console.log('   Example: "--insert-task Get Milk"');
+  console.log('   Example: "--insert-attachment i.png" adds "./files/i.png"');
+  console.log("");
+
+  console.log("'--toggle-task myTaskTd'");
+  console.log("'--toggle-attachment myAttachmentId'");
+  console.log("   Toggles the isComplete property to the opposite value");
+  console.log('   Example: "--toggle-task 1234abc"');
+  console.log("");
+
+  console.log("'--delete-task myTaskTd'");
+  console.log("'--delete-attachment myAttachmentId'");
+  console.log("   Deletes a task or attachment");
+  console.log('   Example: "--delete-task 1234abc"');
+  console.log("");
+
+  console.log("--list");
+  console.log("   List the current tasks and attachments");
+  console.log("");
+
+  console.log("--attachments");
+  console.log("   Copy the attachments over to the ./fileOut directory.");
+  console.log("");
+
+  console.log("--exit");
+  console.log("   Exits the program");
+
+  console.log("--help");
+  console.log("   prints help menu");
+  console.log("************* Commands *************");
+}
+
 async function main() {
   await init();
 
@@ -66,38 +104,7 @@ async function main() {
 
   let isAskedToExit = false;
 
-  console.log("************* Commands *************");
-  console.log("'--insert-task myNewTask'");
-  console.log("'--insert-attachment myFileName'");
-  console.log("   Inserts a task/attachment");
-  console.log("   Inserts an attachment from ./files with the provided name.");
-  console.log('   Example: "--insert-task Get Milk"');
-  console.log('   Example: "--insert-attachment i.png" adds "./files/i.png"');
-  console.log("");
-
-  console.log("'--toggle-task myTaskTd'");
-  console.log("'--toggle-attachment myAttachmentId'");
-  console.log("   Toggles the isComplete property to the opposite value");
-  console.log('   Example: "--toggle-task 1234abc"');
-  console.log("");
-
-  console.log("'--delete-task myTaskTd'");
-  console.log("'--delete-attachment myAttachmentId'");
-  console.log("   Deletes a task or attachment");
-  console.log('   Example: "--delete-task 1234abc"');
-  console.log("");
-
-  console.log("--list");
-  console.log("   List the current tasks and attachments");
-  console.log("");
-
-  console.log("--attachments");
-  console.log("   Copy the attachments over to the ./fileOut directory.");
-  console.log("");
-
-  console.log("--exit");
-  console.log("   Exits the program");
-  console.log("************* Commands *************");
+  help();
 
   const rl = readline.createInterface({ input, output });
 
@@ -123,29 +130,32 @@ async function main() {
       let name = answer.replace("--insert-attachment ", "");
       const metadata = { name: name };
 
-      // Copy the file into Ditto's store and create an attachment object.
-      const myAttachment = await ditto.store.newAttachment(
-        "./files/" + name,
-        metadata,
-      );
-      console.log(myAttachment);
+      try {
+        // Copy the file into Ditto's store and create an attachment object.
+        const myAttachment = await ditto.store.newAttachment(
+          "./files/" + name,
+          metadata,
+        );
 
-      const newDQLAttachment = {
-        name,
-        isDeleted: false,
-        isCompleted: false,
-        my_attachment: myAttachment,
-      };
+        const newDQLAttachment = {
+          name,
+          isDeleted: false,
+          isCompleted: false,
+          my_attachment: myAttachment,
+        };
 
-      // Insert the document into the collection, marking `my_attachment` as an
-      // attachment field.
-      await ditto.store.execute(
-        `
-        INSERT INTO COLLECTION attachments (my_attachment ATTACHMENT)
-        DOCUMENTS (:newDQLAttachment)
-        `,
-        { newDQLAttachment },
-      );
+        await ditto.store.execute(
+          `
+          INSERT INTO COLLECTION attachments (my_attachment ATTACHMENT)
+          DOCUMENTS (:newDQLAttachment)
+          `,
+          { newDQLAttachment },
+        );
+      } catch(e) {
+        // Handle Errors
+        console.log("An error occured!!!");
+        console.log(e);
+      }
     }
 
     // --------------------- Toggle section ---------------------
@@ -211,7 +221,7 @@ async function main() {
     }
 
     if (answer.startsWith("--delete-attachment")) {
-      let id = answer.replace("--delete-attachmen ", "");
+      let id = answer.replace("--delete-attachment ", "");
       await ditto.store.execute(
         `
         UPDATE COLLECTION attachments (my_attachment ATTACHMENT)
@@ -255,6 +265,12 @@ async function main() {
           },
         );
       });
+    }
+
+    // --------------------- Help section ---------------------
+
+    if (answer.startsWith("--help")) {
+      help();
     }
 
     // --------------------- Exit section ---------------------

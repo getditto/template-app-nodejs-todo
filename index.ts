@@ -61,6 +61,7 @@ async function main() {
     appID: "REPLACE_WITH_YOUR_APP_ID",
     token: "REPLACE_WITH_YOUR_TOKEN",
   });
+  ditto.disableSyncWithV3();
   ditto.startSync();
 
   ditto.sync.registerSubscription(

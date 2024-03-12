@@ -14,6 +14,7 @@ let attachmentQueryResult;
 let tasks: Document[] = [];
 let attachments: QueryResultItem[] = [];
 
+// Provides the standard --help functionality on most terminal apps.
 function help() {
   console.log("************* Commands *************");
   console.log("'--insert-task myNewTask'");

@@ -61,8 +61,8 @@ async function main() {
 
   ditto = new Ditto({
     type: "onlinePlayground",
-    appID: "0427da45-5642-4d3d-8bf8-57fe6e5ae852",
-    token: "75e250a6-a349-4527-94f1-081d79481adf",
+    appID: "REPLACE_WITH_YOUR_APP_ID",
+    token: "REPLACE_WITH_YOUR_TOKEN",
   });
 
   await ditto.disableSyncWithV3();
@@ -273,8 +273,11 @@ async function main() {
                     `Attachment fetch completed at ./filesOut/${name}`,
                   );
                   break;
-                default:
-                  console.log("Unable to fetch attachment locally");
+                case "Progress":
+                  console.log("Fetch attachment in progress");
+                  break;
+                case "Deleted":
+                  console.log("Attachment deleted");
                   break;
               }
             },

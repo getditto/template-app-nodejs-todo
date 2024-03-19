@@ -62,7 +62,7 @@ async function main() {
     token: "REPLACE_WITH_YOUR_TOKEN",
   });
   
-  ditto.disableSyncWithV3();
+  await ditto.disableSyncWithV3();
   ditto.startSync();
 
   ditto.sync.registerSubscription(

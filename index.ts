@@ -1,12 +1,13 @@
 import {
-  init,
   Ditto,
+  DittoError,
   Document,
-  QueryResultItem,
+  init,
   QueryResult,
+  QueryResultItem,
 } from "@dittolive/ditto";
-import * as readline from "readline/promises";
 import { stdin as input, stdout as output } from "node:process";
+import * as readline from "readline/promises";
 
 let ditto: Ditto;
 let taskQueryResult: QueryResult;
@@ -22,7 +23,9 @@ function help() {
   console.log("   Inserts a task/attachment");
   console.log("   Inserts an attachment from ./files with the provided name.");
   console.log('   Example: "--insert-task Get Milk"');
-  console.log('   Example: "--insert-attachment peers.webp" adds "./files/peers.webp"');
+  console.log(
+    '   Example: "--insert-attachment peers.webp" adds "./files/peers.webp"',
+  );
   console.log("");
 
   console.log("'--toggle-task myTaskTd'");
@@ -58,10 +61,10 @@ async function main() {
 
   ditto = new Ditto({
     type: "onlinePlayground",
-    appID: "REPLACE_WITH_YOUR_APP_ID",
-    token: "REPLACE_WITH_YOUR_TOKEN",
+    appID: "0427da45-5642-4d3d-8bf8-57fe6e5ae852",
+    token: "75e250a6-a349-4527-94f1-081d79481adf",
   });
-  
+
   await ditto.disableSyncWithV3();
   ditto.startSync();
 
@@ -154,16 +157,15 @@ async function main() {
           `,
           { newDQLAttachment },
         );
-      } catch(e) {
-        // Handle Errors
-        console.log("An error occured!!!");
-        console.log(e);
-      } catch(e) {
-        if (e instanceof DittoError && e.code === 'store/attachment-file-not-found') {
-            console.error(`File not found: ${name}`)
+      } catch (e) {
+        if (
+          e instanceof DittoError &&
+          e.code === "store/attachment-file-not-found"
+        ) {
+          console.error(`File not found: ${name}`);
         } else {
-            console.error('Error trying to insert attachment:');
-            console.error(e);
+          console.error("Error trying to insert attachment:");
+          console.error(e);
         }
       }
     }
@@ -257,23 +259,28 @@ async function main() {
       // Get attachment from the observer and copy all files to the filesOut directory.
       attachments.forEach((element) => {
         try {
-        const attachmentToken = element.value.my_attachment;
+          const attachmentToken = element.value.my_attachment;
 
-        ditto.store.fetchAttachment(attachmentToken, async (attachmentFetchEvent) => {
-          switch (attachmentFetchEvent.type) {
-            case "Completed":
-              const fetchedAttachment = attachmentFetchEvent.attachment;
-              const name = fetchedAttachment.metadata["name"];
-              fetchedAttachment.copyToPath("./filesOut/" + name);
-              console.log(`Attachment fetch completed at ./filesOut/${name}`);
-              break;
-            default:
-              console.log("Unable to fetch attachment locally");
-              break;
-          }
-        });
-        } catch(e) {
-          console.log("Error when trying to copy all attachments.")
+          ditto.store.fetchAttachment(
+            attachmentToken,
+            async (attachmentFetchEvent) => {
+              switch (attachmentFetchEvent.type) {
+                case "Completed":
+                  const fetchedAttachment = attachmentFetchEvent.attachment;
+                  const name = fetchedAttachment.metadata["name"];
+                  fetchedAttachment.copyToPath("./filesOut/" + name);
+                  console.log(
+                    `Attachment fetch completed at ./filesOut/${name}`,
+                  );
+                  break;
+                default:
+                  console.log("Unable to fetch attachment locally");
+                  break;
+              }
+            },
+          );
+        } catch (e) {
+          console.log("Error when trying to copy all attachments.");
           console.log(e);
         }
       });

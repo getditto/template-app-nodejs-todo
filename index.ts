@@ -9,8 +9,8 @@ import * as readline from "readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 
 let ditto: Ditto;
-let taskQueryResult;
-let attachmentQueryResult;
+let taskQueryResult: QueryResult;
+let attachmentQueryResult: QueryResult;
 let tasks: Document[] = [];
 let attachments: QueryResultItem[] = [];
 

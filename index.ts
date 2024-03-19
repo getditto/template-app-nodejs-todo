@@ -22,7 +22,7 @@ function help() {
   console.log("   Inserts a task/attachment");
   console.log("   Inserts an attachment from ./files with the provided name.");
   console.log('   Example: "--insert-task Get Milk"');
-  console.log('   Example: "--insert-attachment i.png" adds "./files/i.png"');
+  console.log('   Example: "--insert-attachment peers.webp" adds "./files/peers.webp"');
   console.log("");
 
   console.log("'--toggle-task myTaskTd'");

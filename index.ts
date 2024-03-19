@@ -281,7 +281,7 @@ async function main() {
     // --------------------- Exit section ---------------------
 
     if (answer.startsWith("--exit")) {
-      await ditto.close;
+      await ditto.close();
       process.exit();
     }
   }

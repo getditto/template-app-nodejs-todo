@@ -158,6 +158,13 @@ async function main() {
         // Handle Errors
         console.log("An error occured!!!");
         console.log(e);
+      } catch(e) {
+        if (e instanceof DittoError && e.code === 'store/attachment-file-not-found') {
+            console.error(`File not found: ${name}`)
+        } else {
+            console.error('Error trying to insert attachment:');
+            console.error(e);
+        }
       }
     }
 

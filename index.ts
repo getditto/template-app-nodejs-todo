@@ -258,6 +258,7 @@ async function main() {
               const fetchedAttachment = attachmentFetchEvent.attachment;
               const name = fetchedAttachment.metadata["name"];
               fetchedAttachment.copyToPath("./filesOut/" + name);
+              console.log(`Attachment fetch completed at ./filesOut/${name}`);
               break;
             default:
               console.log("Unable to fetch attachment locally");
